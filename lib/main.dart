@@ -1,40 +1,52 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_news_app/src/bloc/simple_bloc_delegate.dart';
+import 'package:flutter_news_app/src/commonWidget/bloc/bloc.dart';
+import 'package:flutter_news_app/src/theme/bloc/theme_bloc.dart';
+import 'package:flutter_news_app/src/theme/bloc/theme_state.dart';
+import 'package:flutter_news_app/src/theme/theme.dart';
+import 'src/helpers/routes.dart';
+import 'src/pages/homePage/bloc/bloc.dart';
+import 'src/pages/newsDetail/bloc/bloc.dart';
+import 'src/resources/repository.dart';
 
-void main() => runApp(MyApp());
-
-class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      // Application name
-      title: 'Flutter Hello World',
-      // Application theme data, you can set the colors for the application as
-      // you want
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      // A widget which will be started on application startup
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
+void main() {
+  BlocObserver observer = SimpleBlocObserver();
+  runApp(MyApp());
 }
 
-class MyHomePage extends StatelessWidget {
-  final String title;
-  const MyHomePage({Key? key, required this.title}) : super(key: key);
-
+class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        // The title text which will be shown on the action bar
-        title: Text(title),
-      ),
-      body: Center(
-        child: Text(
-          'Hello, World!',
+    ThemeData apptheme;
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<NewsBloc>(
+          create: (context) =>
+              NewsBloc(repository: Repository())..add(Fetch(type: 'General')),
         ),
+        BlocProvider<DetailBloc>(create: (context) => DetailBloc()),
+        BlocProvider<NavigationBloc>(create: (context) => NavigationBloc()),
+        BlocProvider<ThemeBloc>(create: (context) => ThemeBloc()),
+      ],
+      child: BlocBuilder<ThemeBloc, ThemeState>(
+        builder: (context, state) {
+          if (state is SelectedTheme) {
+            apptheme = state.themeType != ThemeType.Light
+                ? AppTheme.lightTheme
+                : AppTheme.darkTheme;
+          }
+          return Builder(
+            builder: (context) {
+              return MaterialApp(
+                title: 'Flutter Demo',
+                theme: apptheme,
+                debugShowCheckedModeBanner: false,
+                routes: Routes.getRoute(),
+              );
+            },
+          );
+        },
       ),
     );
   }
